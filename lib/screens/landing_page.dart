@@ -1,6 +1,28 @@
+import 'package:beaconflutter/screens/follow_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
+  @override
+  _LandingPageState createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  Future<String> getClipBoardData() async {
+    ClipboardData data = await Clipboard.getData(Clipboard.kTextPlain);
+    return data.text;
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _focusNode?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,8 +43,65 @@ class LandingPage extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                _controller.clear();
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return StatefulBuilder(builder:
+                          (BuildContext context, StateSetter setState) {
+                        return _buildDialog();
+                      });
+                    });
+              },
               child: Text('Follow the Beacon'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDialog() {
+    return Dialog(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.center,
+          children: [
+            TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              decoration: InputDecoration(
+                hintText: 'Enter pass key',
+                suffixIcon: InkWell(
+                  onTap: () async {
+                    final passKey = await getClipBoardData();
+                    setState(() => _controller.text = passKey);
+                    _focusNode.unfocus();
+                  },
+                  child: Icon(Icons.paste),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => FollowScreen(
+                        passKey: _controller.text.trim(),
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Lets follow it!',
+                ),
+              ),
             ),
           ],
         ),
