@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:beaconflutter/services/location_database.dart';
+import 'package:custom_timer/custom_timer.dart';
 import 'package:duration_picker/duration_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,12 +10,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:random_string/random_string.dart';
 
-class MapScreen extends StatefulWidget {
+class CarryScreen extends StatefulWidget {
   @override
-  _MapScreenState createState() => _MapScreenState();
+  _CarryScreenState createState() => _CarryScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _CarryScreenState extends State<CarryScreen> {
   StreamSubscription _locationSubscription;
   GoogleMapController mapController;
   Location _location = Location();
@@ -73,7 +74,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your location'),
+        title: Text('Carry the beacon'),
       ),
       body: Stack(
         children: [
@@ -110,18 +111,39 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           FloatingActionButton(
             heroTag: "carrybeacon",
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) {
-                    return StatefulBuilder(
-                      builder: (BuildContext context, StateSetter setState) {
-                        return _buildDialog(context, setState);
-                      },
-                    );
-                  });
-            },
+            onPressed: isCarrying
+                ? () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Operation Failed'),
+                            content: Text(
+                                'Already has an active carry. Please go back to Home page and start again'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text('OK'),
+                              )
+                            ],
+                          );
+                        });
+                  }
+                : () {
+                    showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) {
+                          return StatefulBuilder(
+                            builder:
+                                (BuildContext context, StateSetter setState) {
+                              return _buildDialog(context, setState);
+                            },
+                          );
+                        });
+                  },
             backgroundColor: Colors.white,
             child: Icon(
               Icons.add_circle_outlined,
@@ -180,9 +202,38 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       const SizedBox(height: 8.0),
-      Text(
-        'Time remaining: ${_duration.toString().substring(0, 7)}',
-        style: Theme.of(context).textTheme.subtitle2,
+      CustomTimer(
+        from: _duration,
+        to: Duration(hours: 0),
+        onBuildAction: CustomTimerAction.auto_start,
+        builder: (CustomTimerRemainingTime remaining) {
+          return Text(
+            "Expires in: ${remaining.hours}:${remaining.minutes}:${remaining.seconds}",
+            style: Theme.of(context).textTheme.subtitle2,
+          );
+        },
+        onFinish: () {
+          setState(() {
+            isCarrying = false;
+          });
+          showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text('Passkey expired'),
+                  content: Text(
+                      'The time for the active passkey is over!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text('OK'),
+                    ),
+                  ],
+                );
+              });
+        },
       ),
     ];
   }
@@ -217,21 +268,24 @@ class _MapScreenState extends State<MapScreen> {
               snapToMins: 5.0,
             ),
             OutlinedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                final location = await _location.getLocation();
-                setState(() {
-                  isCarrying = true;
-                  passKey = randomAlphaNumeric(10);
-                });
-                locationDatabase.createLocationData(
-                  passKey,
-                  location.latitude.toString(),
-                  location.longitude.toString(),
-                  location.accuracy,
-                  location.heading,
-                );
-              },
+              onPressed: _duration > Duration(minutes: 1)
+                  ? () async {
+                      Navigator.of(context).pop();
+                      final location = await _location.getLocation();
+                      setState(() {
+                        isCarrying = true;
+                        passKey = randomAlphaNumeric(10);
+                      });
+                      locationDatabase.createLocationData(
+                        passKey,
+                        location.latitude.toString(),
+                        location.longitude.toString(),
+                        location.accuracy,
+                        location.heading,
+                        _duration,
+                      );
+                    }
+                  : null,
               child: Text(
                 'Lets carry it!',
               ),

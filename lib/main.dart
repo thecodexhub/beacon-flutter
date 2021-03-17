@@ -1,5 +1,5 @@
 import 'package:beaconflutter/screens/landing_page.dart';
-import 'package:beaconflutter/screens/map_screen.dart';
+import 'package:beaconflutter/screens/carry_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
       ),
       routes: {
-        '/mapScreen': (context) => MapScreen(),
+        '/carryScreen': (context) => CarryScreen(),
       },
       home: LandingPage(),
     );

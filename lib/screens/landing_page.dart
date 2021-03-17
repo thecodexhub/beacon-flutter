@@ -37,7 +37,7 @@ class _LandingPageState extends State<LandingPage> {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/mapScreen');
+                Navigator.pushNamed(context, '/carryScreen');
               },
               child: Text('Carry the Beacon'),
             ),

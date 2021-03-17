@@ -24,6 +24,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
+  custom_timer: ^0.0.3
   duration_picker: ^1.0.1
   firebase_core: ^1.0.1
   firebase_database: ^6.1.0

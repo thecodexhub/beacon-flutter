@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:beaconflutter/services/location_database.dart';
+import 'package:custom_timer/custom_timer.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,8 +19,6 @@ class _FollowScreenState extends State<FollowScreen> {
   Circle circle;
 
   final LocationDatabase _locationDatabase = LocationDatabase();
-
-  final LatLng _center = const LatLng(22.06046, 88.10975);
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -67,7 +64,7 @@ class _FollowScreenState extends State<FollowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tracking location'),
+        title: Text('Follow the beacon'),
       ),
       body: StreamBuilder(
         stream: _locationDatabase.fetchLocation(widget.passKey),
@@ -83,14 +80,33 @@ class _FollowScreenState extends State<FollowScreen> {
               final longitudeString = _snapshot.value["longitude"];
               final accuracyValue = _snapshot.value["accuracy"];
               final headingValue = _snapshot.value["heading"];
+              final createdAtInMilliseconds = _snapshot.value["createdAt"];
+              final durationInMilliseconds = _snapshot.value["duration"];
 
               final double latitude = double.parse(latitudeString);
               final double longitude = double.parse(longitudeString);
               final double accuracy = double.parse(accuracyValue.toString());
               final double heading = double.parse(headingValue.toString());
 
-              updateMarkerAndCircle(latitude, longitude, accuracy, heading);
-              return _buildContent(latitude, longitude);
+              final diff = DateTime.now().millisecondsSinceEpoch -
+                  createdAtInMilliseconds;
+              final Duration remainingTime =
+                  Duration(milliseconds: durationInMilliseconds - diff);
+
+              final Duration rDuration = Duration(
+                hours: remainingTime.inHours,
+                minutes: remainingTime.inMinutes.remainder(60),
+                seconds: remainingTime.inSeconds.remainder(60),
+              );
+
+              if (rDuration > Duration(milliseconds: 1)) {
+                updateMarkerAndCircle(latitude, longitude, accuracy, heading);
+                return _buildContent(latitude, longitude, rDuration);
+              } else {
+                return Center(
+                  child: _buildEmptyContent(),
+                );
+              }
             }
           } else {
             return Center(
@@ -102,12 +118,15 @@ class _FollowScreenState extends State<FollowScreen> {
     );
   }
 
-  Widget _buildCard() {
+  Widget _buildCard(Duration duration) {
     return Container(
-      margin: const EdgeInsets.all(12.0),
-      padding: const EdgeInsets.all(12.0),
+      margin: const EdgeInsets.only(top: 12.0),
+      padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16.0),
+          topRight: Radius.circular(16.0),
+        ),
         color: Colors.white,
       ),
       child: Column(
@@ -147,16 +166,26 @@ class _FollowScreenState extends State<FollowScreen> {
             ],
           ),
           const SizedBox(height: 8.0),
-          Text(
-            'Time remaining:',
-            style: Theme.of(context).textTheme.subtitle2,
+          CustomTimer(
+            from: duration,
+            to: Duration(hours: 0),
+            onBuildAction: CustomTimerAction.auto_start,
+            builder: (CustomTimerRemainingTime remaining) {
+              return Text(
+                "Remaining time: ${remaining.hours}:${remaining.minutes}:${remaining.seconds}",
+                style: Theme.of(context).textTheme.subtitle2,
+              );
+            },
+            onFinish: () {
+              setState(() {});
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent(double latitude, double longitude) {
+  Widget _buildContent(double latitude, double longitude, Duration duration) {
     return Stack(
       children: [
         GoogleMap(
@@ -171,8 +200,39 @@ class _FollowScreenState extends State<FollowScreen> {
           markers: Set.of((marker != null) ? [marker] : []),
           circles: Set.of((circle != null) ? [circle] : []),
         ),
-        _buildCard(),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: _buildCard(duration),
+        ),
       ],
+    );
+  }
+
+  Widget _buildEmptyContent() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Passkey Expired!',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headline5.copyWith(
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 6.0),
+          Text(
+            'Your passkey has been expired! Please go back to Home Screen and use another.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.subtitle2.copyWith(
+              color: Colors.black45,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
