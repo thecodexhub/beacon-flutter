@@ -1,6 +1,6 @@
-# beaconflutter
+# Beacon-Flutter
 
-A new Flutter project.
+A Flutter Application that is able to share your location with anyone who has a specific passkey.
 
 ## Getting Started
 
