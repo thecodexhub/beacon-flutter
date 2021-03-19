@@ -18,6 +18,10 @@ Some screenshots are -
 </tr></table>
 </div>
 
+## Video demo
+
+For demo video about how it works, click [here](https://drive.google.com/file/d/1J6u-EiEpsJRB1IzBJZgW7TO5RWWPPUAU/view?usp=sharing)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
