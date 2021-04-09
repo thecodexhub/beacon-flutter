@@ -50,7 +50,7 @@ class _LandingPageState extends State<LandingPage> {
                     builder: (context) {
                       return StatefulBuilder(builder:
                           (BuildContext context, StateSetter setState) {
-                        return _buildDialog();
+                        return _buildDialog(setState);
                       });
                     });
               },
@@ -62,7 +62,7 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  Widget _buildDialog() {
+  Widget _buildDialog(StateSetter setState) {
     return Dialog(
       child: Padding(
         padding: const EdgeInsets.all(12.0),

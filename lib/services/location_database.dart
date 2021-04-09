@@ -1,39 +1,52 @@
+import 'package:beaconflutter/models/beacon.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
-class LocationDatabase {
+abstract class Database {
+  Future<void> createBeacon(
+      {@required Beacon beacon, @required String passKey});
+  Future<void> updateBeacon(
+      {@required String passKey, @required Beacon beacon});
+  Stream beaconStream({@required String passKey});
+}
+
+class BeaconDatabase implements Database {
   final databaseReference = FirebaseDatabase.instance.reference();
 
-  Future<void> createLocationData(String passKey, String latitude,
-      String longitude, double accuracy, double heading, Duration duration) async {
+  @override
+  Future<void> createBeacon(
+      {@required Beacon beacon, @required String passKey}) async {
     try {
-      await databaseReference.child("beaconflutter-$passKey").set({
-        'latitude': latitude,
-        'longitude': longitude,
-        'accuracy': accuracy,
-        'heading': heading,
-        'createdAt': DateTime.now().millisecondsSinceEpoch,
-        'duration': duration.inMilliseconds,
-      });
+      await databaseReference
+          .child("beaconflutter-$passKey")
+          .set(beacon.toMapCreate());
     } catch (e) {
       print(e.toString());
     }
   }
 
-  Future<void> updateLocationData(String passKey, String latitude,
-      String longitude, double accuracy, double heading) async {
+  @override
+  Future<void> updateBeacon(
+      {@required String passKey, @required Beacon beacon}) async {
     try {
-      await databaseReference.child("beaconflutter-$passKey").update({
-        'latitude': latitude,
-        'longitude': longitude,
-        'accuracy': accuracy,
-        'heading': heading,
-      });
+      await databaseReference
+          .child("beaconflutter-$passKey")
+          .update(beacon.toMapUpdate());
     } catch (e) {
       print(e.toString());
     }
   }
 
-  Stream fetchLocation(String passKey) {
-    return databaseReference.child("beaconflutter-$passKey").onValue;
+  @override
+  Stream beaconStream({@required String passKey}) {
+    return databaseReference
+        .child("beaconflutter-$passKey")
+        .onValue
+        .map((snapshot) {
+      return snapshot.snapshot;
+    }).map((snapshot) {
+      final result = Map<String, dynamic>.from(snapshot.value);
+      return Beacon.fromMap(result, passKey);
+    });
   }
 }

@@ -1,6 +1,6 @@
+import 'package:beaconflutter/models/beacon.dart';
 import 'package:beaconflutter/services/location_database.dart';
 import 'package:custom_timer/custom_timer.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -18,19 +18,18 @@ class _FollowScreenState extends State<FollowScreen> {
   Marker marker;
   Circle circle;
 
-  final LocationDatabase _locationDatabase = LocationDatabase();
+  Database _database = BeaconDatabase();
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
-  void updateMarkerAndCircle(
-      double latitude, double longitude, double accuracy, double heading) {
-    LatLng latLng = LatLng(latitude, longitude);
+  void updateMarkerAndCircle(Beacon beacon) {
+    LatLng latLng = LatLng(beacon.latitude, beacon.longitude);
     marker = Marker(
       markerId: MarkerId('follow-arrow-head'),
       position: latLng,
-      rotation: heading,
+      rotation: beacon.heading,
       draggable: false,
       zIndex: 2,
       flat: true,
@@ -39,7 +38,7 @@ class _FollowScreenState extends State<FollowScreen> {
     );
     circle = Circle(
       circleId: CircleId('follow-arrow-circle'),
-      radius: accuracy,
+      radius: beacon.accuracy,
       center: latLng,
       zIndex: 1,
       strokeColor: Colors.blue,
@@ -50,7 +49,7 @@ class _FollowScreenState extends State<FollowScreen> {
       mapController.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
-            target: LatLng(latitude, longitude),
+            target: LatLng(beacon.latitude, beacon.longitude),
             bearing: 192.8334901395799,
             tilt: 0,
             zoom: 14.4746,
@@ -67,32 +66,15 @@ class _FollowScreenState extends State<FollowScreen> {
         title: Text('Follow the beacon'),
       ),
       body: StreamBuilder(
-        stream: _locationDatabase.fetchLocation(widget.passKey),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.active) {
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(snapshot.error.toString()),
-              );
-            } else {
-              DataSnapshot _snapshot = snapshot.data.snapshot;
-              final latitudeString = _snapshot.value["latitude"];
-              final longitudeString = _snapshot.value["longitude"];
-              final accuracyValue = _snapshot.value["accuracy"];
-              final headingValue = _snapshot.value["heading"];
-              final createdAtInMilliseconds = _snapshot.value["createdAt"];
-              final durationInMilliseconds = _snapshot.value["duration"];
+          stream: _database.beaconStream(passKey: widget.passKey),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.active) {
+              final Beacon beacon = snapshot.data;
 
-              final double latitude = double.parse(latitudeString);
-              final double longitude = double.parse(longitudeString);
-              final double accuracy = double.parse(accuracyValue.toString());
-              final double heading = double.parse(headingValue.toString());
-
-              final diff = DateTime.now().millisecondsSinceEpoch -
-                  createdAtInMilliseconds;
+              final diff =
+                  DateTime.now().millisecondsSinceEpoch - beacon.createdAt;
               final Duration remainingTime =
-                  Duration(milliseconds: durationInMilliseconds - diff);
-
+                  Duration(milliseconds: beacon.duration - diff);
               final Duration rDuration = Duration(
                 hours: remainingTime.inHours,
                 minutes: remainingTime.inMinutes.remainder(60),
@@ -100,21 +82,17 @@ class _FollowScreenState extends State<FollowScreen> {
               );
 
               if (rDuration > Duration(milliseconds: 1)) {
-                updateMarkerAndCircle(latitude, longitude, accuracy, heading);
-                return _buildContent(latitude, longitude, rDuration);
+                updateMarkerAndCircle(beacon);
+                return _buildContent(beacon, remainingTime);
               } else {
                 return Center(
                   child: _buildEmptyContent(),
                 );
               }
+            } else {
+              return CircularProgressIndicator();
             }
-          } else {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        },
-      ),
+          }),
     );
   }
 
@@ -185,7 +163,7 @@ class _FollowScreenState extends State<FollowScreen> {
     );
   }
 
-  Widget _buildContent(double latitude, double longitude, Duration duration) {
+  Widget _buildContent(Beacon beacon, Duration duration) {
     return Stack(
       children: [
         GoogleMap(
@@ -194,7 +172,7 @@ class _FollowScreenState extends State<FollowScreen> {
           zoomControlsEnabled: false,
           compassEnabled: true,
           initialCameraPosition: CameraPosition(
-            target: LatLng(latitude, longitude),
+            target: LatLng(beacon.latitude, beacon.longitude),
             zoom: 14.4746,
           ),
           markers: Set.of((marker != null) ? [marker] : []),
@@ -220,16 +198,16 @@ class _FollowScreenState extends State<FollowScreen> {
             'Passkey Expired!',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headline5.copyWith(
-              color: Colors.black54,
-            ),
+                  color: Colors.black54,
+                ),
           ),
           const SizedBox(height: 6.0),
           Text(
             'Your passkey has been expired! Please go back to Home Screen and use another.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.subtitle2.copyWith(
-              color: Colors.black45,
-            ),
+                  color: Colors.black45,
+                ),
           ),
         ],
       ),

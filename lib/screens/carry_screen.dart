@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:beaconflutter/models/beacon.dart';
 import 'package:beaconflutter/services/location_database.dart';
 import 'package:custom_timer/custom_timer.dart';
 import 'package:duration_picker/duration_picker.dart';
@@ -26,7 +27,8 @@ class _CarryScreenState extends State<CarryScreen> {
 
   bool isCarrying = false;
 
-  LocationDatabase locationDatabase = LocationDatabase();
+  // BeaconDatabase beaconDatabase = BeaconDatabase();
+  Database _database = BeaconDatabase();
 
   final LatLng _center = const LatLng(22.06046, 88.10975);
 
@@ -221,8 +223,7 @@ class _CarryScreenState extends State<CarryScreen> {
               builder: (context) {
                 return AlertDialog(
                   title: Text('Passkey expired'),
-                  content: Text(
-                      'The time for the active passkey is over!'),
+                  content: Text('The time for the active passkey is over!'),
                   actions: [
                     TextButton(
                       onPressed: () {
@@ -276,14 +277,26 @@ class _CarryScreenState extends State<CarryScreen> {
                         isCarrying = true;
                         passKey = randomAlphaNumeric(10);
                       });
-                      locationDatabase.createLocationData(
-                        passKey,
-                        location.latitude.toString(),
-                        location.longitude.toString(),
-                        location.accuracy,
-                        location.heading,
-                        _duration,
+                      _database.createBeacon(
+                        beacon: Beacon(
+                          passKey: passKey,
+                          latitude: location.latitude,
+                          longitude: location.longitude,
+                          accuracy: location.accuracy,
+                          heading: location.accuracy,
+                          createdAt: DateTime.now().millisecondsSinceEpoch,
+                          duration: _duration.inMilliseconds,
+                        ),
+                        passKey: passKey,
                       );
+                      // beaconDatabase.createLocationData(
+                      //   passKey,
+                      //   location.latitude.toString(),
+                      //   location.longitude.toString(),
+                      //   location.accuracy,
+                      //   location.heading,
+                      //   _duration,
+                      // );
                     }
                   : null,
               child: Text(
@@ -303,13 +316,23 @@ class _CarryScreenState extends State<CarryScreen> {
       // Update the Marker and Circle in the Google Maps according to user location
       updateMarkerAndCircle(imageData, location);
       if (isCarrying) {
-        locationDatabase.updateLocationData(
-          passKey,
-          location.latitude.toString(),
-          location.longitude.toString(),
-          location.accuracy,
-          location.heading,
+        _database.updateBeacon(
+          passKey: passKey,
+          beacon: Beacon(
+            passKey: passKey,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy: location.accuracy,
+            heading: location.heading,
+          ),
         );
+        // beaconDatabase.updateLocationData(
+        //   passKey,
+        //   location.latitude.toString(),
+        //   location.longitude.toString(),
+        //   location.accuracy,
+        //   location.heading,
+        // );
       }
 
       if (_locationSubscription != null) _locationSubscription.cancel();
@@ -329,13 +352,23 @@ class _CarryScreenState extends State<CarryScreen> {
           // Update the marker according to the new location
           updateMarkerAndCircle(imageData, newLocation);
           if (isCarrying) {
-            locationDatabase.updateLocationData(
-              passKey,
-              newLocation.latitude.toString(),
-              newLocation.longitude.toString(),
-              newLocation.accuracy,
-              newLocation.heading,
+            _database.updateBeacon(
+              passKey: passKey,
+              beacon: Beacon(
+                passKey: passKey,
+                latitude: newLocation.latitude,
+                longitude: newLocation.longitude,
+                accuracy: newLocation.accuracy,
+                heading: newLocation.heading,
+              ),
             );
+            // beaconDatabase.updateLocationData(
+            //   passKey,
+            //   newLocation.latitude.toString(),
+            //   newLocation.longitude.toString(),
+            //   newLocation.accuracy,
+            //   newLocation.heading,
+            // );
           }
         }
       });
