@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:beaconflutter/models/beacon.dart';
 import 'package:beaconflutter/services/location_database.dart';
@@ -19,8 +18,8 @@ class CarryScreen extends StatefulWidget {
 class _CarryScreenState extends State<CarryScreen> {
   StreamSubscription _locationSubscription;
   GoogleMapController mapController;
-  Location _location = Location();
-  Duration _duration = Duration(hours: 0, minutes: 0);
+  final Location _location = Location();
+  Duration _duration = const Duration();
   Marker marker;
   Circle circle;
   String passKey;
@@ -28,32 +27,29 @@ class _CarryScreenState extends State<CarryScreen> {
   bool isCarrying = false;
 
   // BeaconDatabase beaconDatabase = BeaconDatabase();
-  Database _database = BeaconDatabase();
+  final Database _database = BeaconDatabase();
 
   final LatLng _center = const LatLng(22.06046, 88.10975);
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
+  void _onMapCreated(GoogleMapController controller) =>
+      mapController = controller;
 
-  Future<Uint8List> getMarker() async {
-    ByteData byteData =
-        await DefaultAssetBundle.of(context).load('assets/arrow_pointer.png');
-    return byteData.buffer.asUint8List();
-  }
+  // Future<Uint8List> getMarker() async {
+  //   final ByteData byteData =
+  //       await DefaultAssetBundle.of(context).load('assets/arrow_pointer.png');
+  //   return byteData.buffer.asUint8List();
+  // }
 
-  void updateMarkerAndCircle(Uint8List imageData, LocationData location) {
-    LatLng latLng = LatLng(location.latitude, location.longitude);
-    this.setState(() {
+  void updateMarkerAndCircle(LocationData location) {
+    final LatLng latLng = LatLng(location.latitude, location.longitude);
+    setState(() {
       marker = Marker(
         markerId: MarkerId('arrow-head'),
         position: latLng,
         rotation: location.heading,
-        draggable: false,
         zIndex: 2,
         flat: true,
-        anchor: Offset(0.5, 0.5),
-        icon: BitmapDescriptor.defaultMarker,
+        anchor: const Offset(0.5, 0.5),
       );
       circle = Circle(
         circleId: CircleId('arrow-circle'),
@@ -76,7 +72,7 @@ class _CarryScreenState extends State<CarryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Carry the beacon'),
+        title: const Text('Carry the beacon'),
       ),
       body: Stack(
         children: [
@@ -91,21 +87,22 @@ class _CarryScreenState extends State<CarryScreen> {
             markers: Set.of((marker != null) ? [marker] : []),
             circles: Set.of((circle != null) ? [circle] : []),
           ),
-          isCarrying
-              ? Container(
-                  margin: const EdgeInsets.all(8.0),
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: _buildContent(),
-                  ),
-                )
-              : Container(),
+          if (isCarrying)
+            Container(
+              margin: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.0),
+                color: Colors.white,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: _buildContent(),
+              ),
+            )
+          else
+            Container(),
         ],
       ),
       floatingActionButton: Column(
@@ -119,15 +116,14 @@ class _CarryScreenState extends State<CarryScreen> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: Text('Operation Failed'),
-                            content: Text(
-                                'Already has an active carry. Please go back to Home page and start again'),
+                            title: const Text('Operation Failed'),
+                            content: const Text('Already has an active carry.'),
                             actions: [
                               TextButton(
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                child: Text('OK'),
+                                child: const Text('OK'),
                               )
                             ],
                           );
@@ -147,7 +143,7 @@ class _CarryScreenState extends State<CarryScreen> {
                         });
                   },
             backgroundColor: Colors.white,
-            child: Icon(
+            child: const Icon(
               Icons.add_circle_outlined,
               color: Colors.indigo,
             ),
@@ -159,7 +155,7 @@ class _CarryScreenState extends State<CarryScreen> {
               getCurrentLocation();
             },
             backgroundColor: Colors.white,
-            child: Icon(
+            child: const Icon(
               Icons.my_location,
               color: Colors.black,
             ),
@@ -194,19 +190,19 @@ class _CarryScreenState extends State<CarryScreen> {
           InkWell(
             onTap: () {
               Clipboard.setData(ClipboardData(text: passKey));
-              final snackBar = SnackBar(
+              const snackBar = SnackBar(
                 content: Text('Copied to Clipboard'),
               );
               ScaffoldMessenger.of(context).showSnackBar(snackBar);
             },
-            child: Icon(Icons.copy, size: 18.0),
+            child: const Icon(Icons.copy, size: 18.0),
           ),
         ],
       ),
       const SizedBox(height: 8.0),
       CustomTimer(
         from: _duration,
-        to: Duration(hours: 0),
+        to: const Duration(),
         onBuildAction: CustomTimerAction.auto_start,
         builder: (CustomTimerRemainingTime remaining) {
           return Text(
@@ -222,14 +218,15 @@ class _CarryScreenState extends State<CarryScreen> {
               context: context,
               builder: (context) {
                 return AlertDialog(
-                  title: Text('Passkey expired'),
-                  content: Text('The time for the active passkey is over!'),
+                  title: const Text('Passkey expired'),
+                  content:
+                      const Text('The time for the active passkey is over!'),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: Text('OK'),
+                      child: const Text('OK'),
                     ),
                   ],
                 );
@@ -250,7 +247,7 @@ class _CarryScreenState extends State<CarryScreen> {
             Align(
               alignment: Alignment.topRight,
               child: IconButton(
-                icon: Icon(Icons.clear),
+                icon: const Icon(Icons.clear),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -269,7 +266,7 @@ class _CarryScreenState extends State<CarryScreen> {
               snapToMins: 5.0,
             ),
             OutlinedButton(
-              onPressed: _duration > Duration(minutes: 1)
+              onPressed: _duration > const Duration(minutes: 1)
                   ? () async {
                       Navigator.of(context).pop();
                       final location = await _location.getLocation();
@@ -289,17 +286,9 @@ class _CarryScreenState extends State<CarryScreen> {
                         ),
                         passKey: passKey,
                       );
-                      // beaconDatabase.createLocationData(
-                      //   passKey,
-                      //   location.latitude.toString(),
-                      //   location.longitude.toString(),
-                      //   location.accuracy,
-                      //   location.heading,
-                      //   _duration,
-                      // );
                     }
                   : null,
-              child: Text(
+              child: const Text(
                 'Lets carry it!',
               ),
             ),
@@ -309,12 +298,12 @@ class _CarryScreenState extends State<CarryScreen> {
     );
   }
 
-  void getCurrentLocation() async {
+  Future<void> getCurrentLocation() async {
     try {
-      Uint8List imageData = await getMarker();
+      // Uint8List imageData = await getMarker();
       final location = await _location.getLocation();
       // Update the Marker and Circle in the Google Maps according to user location
-      updateMarkerAndCircle(imageData, location);
+      updateMarkerAndCircle(location);
       if (isCarrying) {
         _database.updateBeacon(
           passKey: passKey,
@@ -326,13 +315,6 @@ class _CarryScreenState extends State<CarryScreen> {
             heading: location.heading,
           ),
         );
-        // beaconDatabase.updateLocationData(
-        //   passKey,
-        //   location.latitude.toString(),
-        //   location.longitude.toString(),
-        //   location.accuracy,
-        //   location.heading,
-        // );
       }
 
       if (_locationSubscription != null) _locationSubscription.cancel();
@@ -344,13 +326,12 @@ class _CarryScreenState extends State<CarryScreen> {
               CameraPosition(
                 target: LatLng(newLocation.latitude, newLocation.longitude),
                 bearing: 192.8334901395799,
-                tilt: 0,
                 zoom: 14.4746,
               ),
             ),
           );
           // Update the marker according to the new location
-          updateMarkerAndCircle(imageData, newLocation);
+          updateMarkerAndCircle(newLocation);
           if (isCarrying) {
             _database.updateBeacon(
               passKey: passKey,
@@ -362,13 +343,6 @@ class _CarryScreenState extends State<CarryScreen> {
                 heading: newLocation.heading,
               ),
             );
-            // beaconDatabase.updateLocationData(
-            //   passKey,
-            //   newLocation.latitude.toString(),
-            //   newLocation.longitude.toString(),
-            //   newLocation.accuracy,
-            //   newLocation.heading,
-            // );
           }
         }
       });

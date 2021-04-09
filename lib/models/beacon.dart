@@ -20,12 +20,12 @@ class Beacon {
   });
 
   factory Beacon.fromMap(Map<String, dynamic> data, String passKey) {
-    final double latitude = data['latitude'];
-    final double longitude = data['longitude'];
+    final double latitude = data['latitude'] as double;
+    final double longitude = data['longitude'] as double;
     final double accuracy = double.parse(data['accuracy'].toString());
     final double heading = double.parse(data['heading'].toString());
-    final int createdAt = data['createdAt'];
-    final int duration = data['duration'];
+    final int createdAt = data['createdAt'] as int;
+    final int duration = data['duration'] as int;
 
     return Beacon(
       passKey: passKey,
@@ -40,21 +40,21 @@ class Beacon {
 
   Map<String, dynamic> toMapCreate() {
     return {
-      'latitude': this.latitude,
-      'longitude': this.longitude,
-      'accuracy': this.accuracy,
-      'heading': this.heading,
-      'createdAt': this.createdAt,
-      'duration': this.duration,
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+      'heading': heading,
+      'createdAt': createdAt,
+      'duration': duration,
     };
   }
 
   Map<String, dynamic> toMapUpdate() {
     return {
-      'latitude': this.latitude,
-      'longitude': this.longitude,
-      'accuracy': this.accuracy,
-      'heading': this.heading,
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+      'heading': heading,
     };
   }
 }

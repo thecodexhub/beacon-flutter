@@ -12,7 +12,7 @@ class _LandingPageState extends State<LandingPage> {
   final FocusNode _focusNode = FocusNode();
 
   Future<String> getClipBoardData() async {
-    ClipboardData data = await Clipboard.getData(Clipboard.kTextPlain);
+    final ClipboardData data = await Clipboard.getData(Clipboard.kTextPlain);
     return data.text;
   }
 
@@ -27,19 +27,18 @@ class _LandingPageState extends State<LandingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Beacon Flutter'),
+        title: const Text('Beacon Flutter'),
       ),
       body: SizedBox(
         width: double.maxFinite,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/carryScreen');
               },
-              child: Text('Carry the Beacon'),
+              child: const Text('Carry the Beacon'),
             ),
             const SizedBox(height: 8.0),
             ElevatedButton(
@@ -54,7 +53,7 @@ class _LandingPageState extends State<LandingPage> {
                       });
                     });
               },
-              child: Text('Follow the Beacon'),
+              child: const Text('Follow the Beacon'),
             ),
           ],
         ),
@@ -81,7 +80,7 @@ class _LandingPageState extends State<LandingPage> {
                     setState(() => _controller.text = passKey);
                     _focusNode.unfocus();
                   },
-                  child: Icon(Icons.paste),
+                  child: const Icon(Icons.paste),
                 ),
               ),
             ),
@@ -98,7 +97,7 @@ class _LandingPageState extends State<LandingPage> {
                     ),
                   );
                 },
-                child: Text(
+                child: const Text(
                   'Lets follow it!',
                 ),
               ),

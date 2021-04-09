@@ -45,7 +45,7 @@ class BeaconDatabase implements Database {
         .map((snapshot) {
       return snapshot.snapshot;
     }).map((snapshot) {
-      final result = Map<String, dynamic>.from(snapshot.value);
+      final result = Map<String, dynamic>.from(snapshot.value as Map);
       return Beacon.fromMap(result, passKey);
     });
   }

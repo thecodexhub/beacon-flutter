@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FollowScreen extends StatefulWidget {
-  FollowScreen({Key key, @required this.passKey}) : super(key: key);
+  const FollowScreen({Key key, @required this.passKey}) : super(key: key);
   final String passKey;
 
   @override
@@ -18,23 +18,21 @@ class _FollowScreenState extends State<FollowScreen> {
   Marker marker;
   Circle circle;
 
-  Database _database = BeaconDatabase();
+  final Database _database = BeaconDatabase();
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
   void updateMarkerAndCircle(Beacon beacon) {
-    LatLng latLng = LatLng(beacon.latitude, beacon.longitude);
+    final LatLng latLng = LatLng(beacon.latitude, beacon.longitude);
     marker = Marker(
       markerId: MarkerId('follow-arrow-head'),
       position: latLng,
       rotation: beacon.heading,
-      draggable: false,
       zIndex: 2,
       flat: true,
-      anchor: Offset(0.5, 0.5),
-      icon: BitmapDescriptor.defaultMarker,
+      anchor: const Offset(0.5, 0.5),
     );
     circle = Circle(
       circleId: CircleId('follow-arrow-circle'),
@@ -51,7 +49,6 @@ class _FollowScreenState extends State<FollowScreen> {
           CameraPosition(
             target: LatLng(beacon.latitude, beacon.longitude),
             bearing: 192.8334901395799,
-            tilt: 0,
             zoom: 14.4746,
           ),
         ),
@@ -63,13 +60,13 @@ class _FollowScreenState extends State<FollowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Follow the beacon'),
+        title: const Text('Follow the beacon'),
       ),
       body: StreamBuilder(
           stream: _database.beaconStream(passKey: widget.passKey),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.active) {
-              final Beacon beacon = snapshot.data;
+              final Beacon beacon = snapshot.data as Beacon;
 
               final diff =
                   DateTime.now().millisecondsSinceEpoch - beacon.createdAt;
@@ -77,11 +74,11 @@ class _FollowScreenState extends State<FollowScreen> {
                   Duration(milliseconds: beacon.duration - diff);
               final Duration rDuration = Duration(
                 hours: remainingTime.inHours,
-                minutes: remainingTime.inMinutes.remainder(60),
-                seconds: remainingTime.inSeconds.remainder(60),
+                minutes: remainingTime.inMinutes.remainder(60) as int,
+                seconds: remainingTime.inSeconds.remainder(60) as int,
               );
 
-              if (rDuration > Duration(milliseconds: 1)) {
+              if (rDuration > const Duration(microseconds: 1)) {
                 updateMarkerAndCircle(beacon);
                 return _buildContent(beacon, remainingTime);
               } else {
@@ -90,7 +87,7 @@ class _FollowScreenState extends State<FollowScreen> {
                 );
               }
             } else {
-              return CircularProgressIndicator();
+              return const CircularProgressIndicator();
             }
           }),
     );
@@ -100,7 +97,7 @@ class _FollowScreenState extends State<FollowScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 12.0),
       padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16.0),
           topRight: Radius.circular(16.0),
@@ -134,19 +131,19 @@ class _FollowScreenState extends State<FollowScreen> {
               InkWell(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: widget.passKey));
-                  final snackBar = SnackBar(
+                  const snackBar = SnackBar(
                     content: Text('Copied to Clipboard'),
                   );
                   ScaffoldMessenger.of(context).showSnackBar(snackBar);
                 },
-                child: Icon(Icons.copy, size: 18.0),
+                child: const Icon(Icons.copy, size: 18.0),
               ),
             ],
           ),
           const SizedBox(height: 8.0),
           CustomTimer(
             from: duration,
-            to: Duration(hours: 0),
+            to: const Duration(),
             onBuildAction: CustomTimerAction.auto_start,
             builder: (CustomTimerRemainingTime remaining) {
               return Text(
@@ -170,7 +167,6 @@ class _FollowScreenState extends State<FollowScreen> {
           mapType: MapType.hybrid,
           onMapCreated: _onMapCreated,
           zoomControlsEnabled: false,
-          compassEnabled: true,
           initialCameraPosition: CameraPosition(
             target: LatLng(beacon.latitude, beacon.longitude),
             zoom: 14.4746,
@@ -190,7 +186,6 @@ class _FollowScreenState extends State<FollowScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [

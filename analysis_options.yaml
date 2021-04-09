@@ -1,0 +1,10 @@
+include: package:lint/analysis_options.yaml
+
+linter:
+  rules:
+    - parameter_assignments
+
+analyzer:
+  errors:
+    use_setters_to_change_properties: ignore
+    avoid_print: ignore
