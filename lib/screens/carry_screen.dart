@@ -6,6 +6,7 @@ import 'package:custom_timer/custom_timer.dart';
 import 'package:duration_picker/duration_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:random_string/random_string.dart';
@@ -24,9 +25,13 @@ class _CarryScreenState extends State<CarryScreen> {
   Circle circle;
   String passKey;
 
+  final Set<Polyline> polyline = {};
+  List<LatLng> points = [];
+
+  // PolylinePoints polylinePoints = PolylinePoints();
+
   bool isCarrying = false;
 
-  // BeaconDatabase beaconDatabase = BeaconDatabase();
   final Database _database = BeaconDatabase();
 
   final LatLng _center = const LatLng(22.06046, 88.10975);
@@ -62,6 +67,19 @@ class _CarryScreenState extends State<CarryScreen> {
     });
   }
 
+  void updatePolyline(List<LatLng> points) {
+    setState(() {
+      polyline.add(Polyline(
+        polylineId: PolylineId('route'),
+        points: points,
+        visible: true,
+        width: 5,
+        color: Colors.red,
+        startCap: Cap.roundCap,
+      ));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +104,7 @@ class _CarryScreenState extends State<CarryScreen> {
             ),
             markers: Set.of((marker != null) ? [marker] : []),
             circles: Set.of((circle != null) ? [circle] : []),
+            polylines: polyline,
           ),
           if (isCarrying)
             Container(
@@ -274,6 +293,11 @@ class _CarryScreenState extends State<CarryScreen> {
                         isCarrying = true;
                         passKey = randomAlphaNumeric(10);
                       });
+
+                      points.add(LatLng(location.latitude, location.longitude));
+                      updatePolyline(points);
+
+
                       _database.createBeacon(
                         beacon: Beacon(
                           passKey: passKey,
@@ -281,6 +305,7 @@ class _CarryScreenState extends State<CarryScreen> {
                           longitude: location.longitude,
                           accuracy: location.accuracy,
                           heading: location.accuracy,
+                          points: points.map((e) => e.toJson()).toList(),
                           createdAt: DateTime.now().millisecondsSinceEpoch,
                           duration: _duration.inMilliseconds,
                         ),
@@ -305,6 +330,10 @@ class _CarryScreenState extends State<CarryScreen> {
       // Update the Marker and Circle in the Google Maps according to user location
       updateMarkerAndCircle(location);
       if (isCarrying) {
+        points.add(LatLng(location.latitude, location.longitude));
+        updatePolyline(points);
+
+
         _database.updateBeacon(
           passKey: passKey,
           beacon: Beacon(
@@ -313,6 +342,7 @@ class _CarryScreenState extends State<CarryScreen> {
             longitude: location.longitude,
             accuracy: location.accuracy,
             heading: location.heading,
+            points: points.map((e) => e.toJson()).toList(),
           ),
         );
       }
@@ -332,7 +362,13 @@ class _CarryScreenState extends State<CarryScreen> {
           );
           // Update the marker according to the new location
           updateMarkerAndCircle(newLocation);
-          if (isCarrying) {
+          if (isCarrying &&
+              (newLocation.latitude != location.latitude ||
+                  newLocation.longitude != location.longitude)) {
+            points.add(LatLng(newLocation.latitude, newLocation.longitude));
+            updatePolyline(points);
+
+
             _database.updateBeacon(
               passKey: passKey,
               beacon: Beacon(
@@ -341,6 +377,7 @@ class _CarryScreenState extends State<CarryScreen> {
                 longitude: newLocation.longitude,
                 accuracy: newLocation.accuracy,
                 heading: newLocation.heading,
+                points: points.map((e) => e.toJson()).toList(),
               ),
             );
           }

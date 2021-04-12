@@ -6,6 +6,8 @@ class Beacon {
   final double longitude;
   final double accuracy;
   final double heading;
+  final List<Object> points;
+  // final List<Map<String, dynamic>> points;
   final int createdAt;
   final int duration;
 
@@ -15,6 +17,7 @@ class Beacon {
     @required this.longitude,
     @required this.accuracy,
     @required this.heading,
+    @required this.points,
     this.createdAt,
     this.duration,
   });
@@ -24,6 +27,7 @@ class Beacon {
     final double longitude = data['longitude'] as double;
     final double accuracy = double.parse(data['accuracy'].toString());
     final double heading = double.parse(data['heading'].toString());
+    final List<Object> points = data['points'] as List<Object>;
     final int createdAt = data['createdAt'] as int;
     final int duration = data['duration'] as int;
 
@@ -33,6 +37,7 @@ class Beacon {
       longitude: longitude,
       accuracy: accuracy,
       heading: heading,
+      points: points,
       createdAt: createdAt,
       duration: duration,
     );
@@ -45,6 +50,7 @@ class Beacon {
       'accuracy': accuracy,
       'heading': heading,
       'createdAt': createdAt,
+      'points': points,
       'duration': duration,
     };
   }
@@ -55,6 +61,7 @@ class Beacon {
       'longitude': longitude,
       'accuracy': accuracy,
       'heading': heading,
+      'points': points,
     };
   }
 }

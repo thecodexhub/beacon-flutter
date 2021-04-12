@@ -6,5 +6,6 @@ linter:
 
 analyzer:
   errors:
+    sort_pub_dependencies: ignore
     use_setters_to_change_properties: ignore
     avoid_print: ignore

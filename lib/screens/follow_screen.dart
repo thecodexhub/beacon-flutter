@@ -4,6 +4,7 @@ import 'package:custom_timer/custom_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 
 class FollowScreen extends StatefulWidget {
   const FollowScreen({Key key, @required this.passKey}) : super(key: key);
@@ -18,6 +19,11 @@ class _FollowScreenState extends State<FollowScreen> {
   Marker marker;
   Circle circle;
 
+  final Set<Polyline> polyline = {};
+  List<LatLng> points = [];
+
+  final Location _location = Location();
+
   final Database _database = BeaconDatabase();
 
   void _onMapCreated(GoogleMapController controller) {
@@ -26,6 +32,8 @@ class _FollowScreenState extends State<FollowScreen> {
 
   void updateMarkerAndCircle(Beacon beacon) {
     final LatLng latLng = LatLng(beacon.latitude, beacon.longitude);
+    points = beacon.points.map((e) => LatLng.fromJson(e)).toList();
+
     marker = Marker(
       markerId: MarkerId('follow-arrow-head'),
       position: latLng,
@@ -42,6 +50,15 @@ class _FollowScreenState extends State<FollowScreen> {
       strokeColor: Colors.blue,
       fillColor: Colors.blue.withAlpha(70),
     );
+
+    polyline.add(Polyline(
+      polylineId: PolylineId('follow_route'),
+      points: points,
+      visible: true,
+      width: 5,
+      color: Colors.red,
+      startCap: Cap.roundCap,
+    ));
 
     if (mapController != null) {
       mapController.animateCamera(
@@ -173,6 +190,7 @@ class _FollowScreenState extends State<FollowScreen> {
           ),
           markers: Set.of((marker != null) ? [marker] : []),
           circles: Set.of((circle != null) ? [circle] : []),
+          polylines: polyline,
         ),
         Align(
           alignment: Alignment.bottomCenter,
