@@ -20,7 +20,7 @@ Some screenshots are -
 
 ## Video demo
 
-For demo video about how it works, click [here](https://drive.google.com/file/d/1J6u-EiEpsJRB1IzBJZgW7TO5RWWPPUAU/view?usp=sharing)
+For demo video about how it works, click [here](https://drive.google.com/file/d/1nWpufjqJMcS23HX6MEzzpmxYaccZR7MH/view?usp=sharing)
 
 ## Getting Started
 
