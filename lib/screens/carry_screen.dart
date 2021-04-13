@@ -1,12 +1,14 @@
 import 'dart:async';
 
+import 'package:beaconflutter/common_widgets/beacon_google_map.dart';
 import 'package:beaconflutter/models/beacon.dart';
+import 'package:beaconflutter/providers/map_type_state_notifier.dart';
 import 'package:beaconflutter/services/location_database.dart';
 import 'package:custom_timer/custom_timer.dart';
 import 'package:duration_picker/duration_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:random_string/random_string.dart';
@@ -21,14 +23,12 @@ class _CarryScreenState extends State<CarryScreen> {
   GoogleMapController mapController;
   final Location _location = Location();
   Duration _duration = const Duration();
-  Marker marker;
-  Circle circle;
+  Marker _marker;
+  Circle _circle;
+  Polyline _polyline;
   String passKey;
 
-  final Set<Polyline> polyline = {};
   List<LatLng> points = [];
-
-  // PolylinePoints polylinePoints = PolylinePoints();
 
   bool isCarrying = false;
 
@@ -48,7 +48,7 @@ class _CarryScreenState extends State<CarryScreen> {
   void updateMarkerAndCircle(LocationData location) {
     final LatLng latLng = LatLng(location.latitude, location.longitude);
     setState(() {
-      marker = Marker(
+      _marker = Marker(
         markerId: MarkerId('arrow-head'),
         position: latLng,
         rotation: location.heading,
@@ -56,7 +56,7 @@ class _CarryScreenState extends State<CarryScreen> {
         flat: true,
         anchor: const Offset(0.5, 0.5),
       );
-      circle = Circle(
+      _circle = Circle(
         circleId: CircleId('arrow-circle'),
         radius: location.accuracy,
         center: latLng,
@@ -69,14 +69,13 @@ class _CarryScreenState extends State<CarryScreen> {
 
   void updatePolyline(List<LatLng> points) {
     setState(() {
-      polyline.add(Polyline(
+      _polyline = Polyline(
         polylineId: PolylineId('route'),
         points: points,
-        visible: true,
         width: 5,
         color: Colors.red,
         startCap: Cap.roundCap,
-      ));
+      );
     });
   }
 
@@ -91,20 +90,22 @@ class _CarryScreenState extends State<CarryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Carry the beacon'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.center_focus_strong),
+            onPressed: () =>
+                context.read(beaconMapTypeProvider.notifier).toggleMapType(),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            mapType: MapType.hybrid,
+          BeaconGoogleMap(
+            initialTarget: _center,
             onMapCreated: _onMapCreated,
-            zoomControlsEnabled: false,
-            initialCameraPosition: CameraPosition(
-              target: _center,
-              zoom: 14.4746,
-            ),
-            markers: Set.of((marker != null) ? [marker] : []),
-            circles: Set.of((circle != null) ? [circle] : []),
-            polylines: polyline,
+            marker: _marker,
+            circle: _circle,
+            polyline: _polyline,
           ),
           if (isCarrying)
             Container(
@@ -297,7 +298,6 @@ class _CarryScreenState extends State<CarryScreen> {
                       points.add(LatLng(location.latitude, location.longitude));
                       updatePolyline(points);
 
-
                       _database.createBeacon(
                         beacon: Beacon(
                           passKey: passKey,
@@ -333,7 +333,6 @@ class _CarryScreenState extends State<CarryScreen> {
         points.add(LatLng(location.latitude, location.longitude));
         updatePolyline(points);
 
-
         _database.updateBeacon(
           passKey: passKey,
           beacon: Beacon(
@@ -367,7 +366,6 @@ class _CarryScreenState extends State<CarryScreen> {
                   newLocation.longitude != location.longitude)) {
             points.add(LatLng(newLocation.latitude, newLocation.longitude));
             updatePolyline(points);
-
 
             _database.updateBeacon(
               passKey: passKey,

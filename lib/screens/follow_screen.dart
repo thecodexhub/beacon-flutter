@@ -1,8 +1,12 @@
+import 'package:beaconflutter/common_widgets/beacon_google_map.dart';
+import 'package:beaconflutter/common_widgets/empty_content.dart';
 import 'package:beaconflutter/models/beacon.dart';
+import 'package:beaconflutter/providers/map_type_state_notifier.dart';
 import 'package:beaconflutter/services/location_database.dart';
 import 'package:custom_timer/custom_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 
@@ -16,13 +20,12 @@ class FollowScreen extends StatefulWidget {
 
 class _FollowScreenState extends State<FollowScreen> {
   GoogleMapController mapController;
-  Marker marker;
-  Circle circle;
+  Marker _marker;
+  Circle _circle;
+  Polyline _polyline;
 
-  final Set<Polyline> polyline = {};
+  // final Set<Polyline> polyline = {};
   List<LatLng> points = [];
-
-  final Location _location = Location();
 
   final Database _database = BeaconDatabase();
 
@@ -34,7 +37,7 @@ class _FollowScreenState extends State<FollowScreen> {
     final LatLng latLng = LatLng(beacon.latitude, beacon.longitude);
     points = beacon.points.map((e) => LatLng.fromJson(e)).toList();
 
-    marker = Marker(
+    _marker = Marker(
       markerId: MarkerId('follow-arrow-head'),
       position: latLng,
       rotation: beacon.heading,
@@ -42,7 +45,7 @@ class _FollowScreenState extends State<FollowScreen> {
       flat: true,
       anchor: const Offset(0.5, 0.5),
     );
-    circle = Circle(
+    _circle = Circle(
       circleId: CircleId('follow-arrow-circle'),
       radius: beacon.accuracy,
       center: latLng,
@@ -51,14 +54,14 @@ class _FollowScreenState extends State<FollowScreen> {
       fillColor: Colors.blue.withAlpha(70),
     );
 
-    polyline.add(Polyline(
+    _polyline = Polyline(
       polylineId: PolylineId('follow_route'),
       points: points,
       visible: true,
       width: 5,
       color: Colors.red,
       startCap: Cap.roundCap,
-    ));
+    );
 
     if (mapController != null) {
       mapController.animateCamera(
@@ -78,6 +81,13 @@ class _FollowScreenState extends State<FollowScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Follow the beacon'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.center_focus_strong),
+            onPressed: () =>
+                context.read(beaconMapTypeProvider.notifier).toggleMapType(),
+          ),
+        ],
       ),
       body: StreamBuilder(
           stream: _database.beaconStream(passKey: widget.passKey),
@@ -95,16 +105,19 @@ class _FollowScreenState extends State<FollowScreen> {
                 seconds: remainingTime.inSeconds.remainder(60) as int,
               );
 
-              if (rDuration > const Duration(microseconds: 1)) {
+              if (rDuration > const Duration(milliseconds: 1)) {
                 updateMarkerAndCircle(beacon);
                 return _buildContent(beacon, remainingTime);
               } else {
-                return Center(
-                  child: _buildEmptyContent(),
+                return const EmptyContent(
+                  title: 'Passkey Expired!',
+                  desc: 'Your passkey has been expired! Please go back to Home Screen and use another.',
                 );
               }
             } else {
-              return const CircularProgressIndicator();
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
           }),
     );
@@ -180,50 +193,18 @@ class _FollowScreenState extends State<FollowScreen> {
   Widget _buildContent(Beacon beacon, Duration duration) {
     return Stack(
       children: [
-        GoogleMap(
-          mapType: MapType.hybrid,
+        BeaconGoogleMap(
+          initialTarget: LatLng(beacon.latitude, beacon.longitude),
           onMapCreated: _onMapCreated,
-          zoomControlsEnabled: false,
-          initialCameraPosition: CameraPosition(
-            target: LatLng(beacon.latitude, beacon.longitude),
-            zoom: 14.4746,
-          ),
-          markers: Set.of((marker != null) ? [marker] : []),
-          circles: Set.of((circle != null) ? [circle] : []),
-          polylines: polyline,
+          marker: _marker,
+          circle: _circle,
+          polyline: _polyline,
         ),
         Align(
           alignment: Alignment.bottomCenter,
           child: _buildCard(duration),
         ),
       ],
-    );
-  }
-
-  Widget _buildEmptyContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Passkey Expired!',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headline5.copyWith(
-                  color: Colors.black54,
-                ),
-          ),
-          const SizedBox(height: 6.0),
-          Text(
-            'Your passkey has been expired! Please go back to Home Screen and use another.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.subtitle2.copyWith(
-                  color: Colors.black45,
-                ),
-          ),
-        ],
-      ),
     );
   }
 }
