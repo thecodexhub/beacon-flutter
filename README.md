@@ -15,6 +15,9 @@ Some screenshots are -
 <td style="text-align: center">
 <img src="screenshots/ss_two.png" width="200"/>
 </td>
+<td style="text-align: center">
+<img src="screenshots/ss_three.png" width="200"/>
+</td>
 </tr></table>
 </div>
 
